@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  role          UserRole? @default(null)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  hostedSessions Session[] @relation("HostedSessions")
+  joinedSessions SessionParticipant[] @relation("SessionParticipants")
+  translations   TranslationHistory[] @relation("UserTranslations")
+}
+
+enum UserRole {
+  HOST
+  CLIENT
+}
+
+// Session Management
+model Session {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  hostId        String
+  defaultLang   Language  @default(EN)
+  isPublic      Boolean   @default(true)
+  status        SessionStatus @default(ACTIVE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  endedAt       DateTime?
+  
+  // Relations
+  host          User      @relation("HostedSessions", fields: [hostId], references: [id])
+  participants  SessionParticipant[] @relation("SessionParticipants")
+  translations  TranslationHistory[] @relation("SessionTranslations")
+}
+
+enum SessionStatus {
+  ACTIVE
+  ENDED
+  PAUSED
+}
+
+enum Language {
+  EN
+  UK
+  DE
+}
+
+// Session Participants
+model SessionParticipant {
+  id          String    @id @default(cuid())
+  sessionId   String
+  userId      String
+  language    Language
+  joinedAt    DateTime  @default(now())
+  leftAt      DateTime?
+  
+  // Relations
+  session     Session   @relation("SessionParticipants", fields: [sessionId], references: [id])
+  user        User      @relation("SessionParticipants", fields: [userId], references: [id])
+}
+
+// Translation History
+model TranslationHistory {
+  id            String    @id @default(cuid())
+  sessionId     String
+  userId        String
+  originalText  String
+  translatedText String
+  sourceLang    Language
+  targetLang    Language
+  timestamp     DateTime  @default(now())
+  
+  // Relations
+  session       Session   @relation("SessionTranslations", fields: [sessionId], references: [id])
+  user          User      @relation("UserTranslations", fields: [userId], references: [id])
+}
