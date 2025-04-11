@@ -134,7 +134,14 @@ export const endSession = async (req: AuthRequest, res: Response): Promise<void>
     const userId = req.user?.id;
 
     const session = await prisma.session.findUnique({
-      where: { id: sessionId }
+      where: { id: sessionId },
+      include: {
+        participants: {
+          select: {
+            userId: true
+          }
+        }
+      }
     });
 
     if (!session) {
@@ -156,11 +163,23 @@ export const endSession = async (req: AuthRequest, res: Response): Promise<void>
       }
     });
 
-    // Revert host's role back to null
+    // Reset host's role to undefined
     await prisma.user.update({
       where: { id: session.hostId },
-      data: { role: null }
+      data: { role: undefined }
     });
+
+    // Reset all participants' roles to undefined
+    if (session.participants && session.participants.length > 0) {
+      await prisma.user.updateMany({
+        where: {
+          id: {
+            in: session.participants.map(p => p.userId)
+          }
+        },
+        data: { role: undefined }
+      });
+    }
 
     res.json(updatedSession);
   } catch (error) {
@@ -178,7 +197,7 @@ export const leaveSession = async (req: AuthRequest, res: Response): Promise<voi
       where: {
         sessionId,
         userId,
-        leftAt: null
+        leftAt: undefined
       }
     });
 
@@ -193,10 +212,10 @@ export const leaveSession = async (req: AuthRequest, res: Response): Promise<voi
       data: { leftAt: new Date() }
     });
 
-    // Revert user's role back to null
+    // Reset client's role to undefined
     await prisma.user.update({
       where: { id: userId },
-      data: { role: null }
+      data: { role: undefined }
     });
 
     res.json({ message: 'Successfully left the session' });

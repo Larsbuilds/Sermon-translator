@@ -37,36 +37,37 @@ export default function Dashboard() {
 
   const handleCreateSession = async (sessionData: CreateSessionData) => {
     try {
+      // First update role to HOST
+      await api.updateUserRole('HOST' as UserRole);
+      
+      // Then create the session
       const session = await api.createSession(sessionData);
       if (session) {
         setCurrentSession(session);
-        await api.updateUserRole('HOST' as UserRole);
         navigate(`/session/${session.id}`);
       }
     } catch (error) {
       console.error('Error creating session:', error);
-      const nullRole: UserRoleOrNull = null;
-      await api.updateUserRole(nullRole);
+      // Reset role to undefined in case of error
+      await api.updateUserRole(undefined);
     }
   };
 
   const handleJoinSession = async (sessionId: string, language: Language) => {
     try {
-      // First set role to NULL
-      await api.updateUserRole(null);
+      // First update role to CLIENT
+      await api.updateUserRole('CLIENT' as UserRole);
       
       // Then join the session
       const session = await api.joinSession(sessionId, language);
       if (session) {
         setCurrentSession(session);
-        // Finally set role to CLIENT
-        await api.updateUserRole('CLIENT' as UserRole);
         navigate(`/session/${session.id}`);
       }
     } catch (error) {
       console.error('Error joining session:', error);
-      // Reset role to NULL in case of error
-      await api.updateUserRole(null);
+      // Reset role to undefined in case of error
+      await api.updateUserRole(undefined);
     }
   };
 

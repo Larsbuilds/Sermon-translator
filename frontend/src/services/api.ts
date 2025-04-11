@@ -9,7 +9,7 @@ interface LoginCredentials {
 
 interface RegisterData extends LoginCredentials {
   name?: string;
-  role: UserRole;
+  role?: UserRole;
 }
 
 interface CreateSessionData {
@@ -110,13 +110,13 @@ class ApiService {
     });
   }
 
-  async updateUserRole(role: UserRole | null): Promise<User> {
+  async updateUserRole(role: UserRole | undefined): Promise<User> {
     console.log('Updating user role to:', role);
     console.log('Current token:', this.token);
     try {
       const response = await this.fetchWithAuth('/auth/role', {
         method: 'PATCH',
-        body: JSON.stringify({ role }),
+        body: JSON.stringify({ role: role }),
       });
       console.log('Role update result:', response);
       if (!response) {
@@ -127,9 +127,6 @@ class ApiService {
       if (response.message && response.message.includes('already has the requested role')) {
         console.log('User already has the requested role:', role);
         return response.user;
-      }
-      if (!response.role) {
-        throw new Error('Invalid response from role update');
       }
       return response;
     } catch (error) {
@@ -146,7 +143,7 @@ class ApiService {
       method: 'POST',
     });
     // Reset role to null after leaving session
-    await this.updateUserRole(null);
+    await this.updateUserRole(undefined);
   }
 }
 

@@ -33,7 +33,7 @@ export const register = async (req: Request<{}, {}, RegisterBody>, res: Response
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user with NULL role by default
+    // Create user with undefined role by default
     const user = await prisma.user.create({
       data: {
         email,
@@ -83,27 +83,27 @@ export const login = async (req: Request<{}, {}, LoginBody>, res: Response): Pro
       return;
     }
 
-    // Ensure user has NULL role if not in a session
-    if (user.role !== null) {
-      // Check if user is in any active session
-      const activeSession = await prisma.session.findFirst({
-        where: {
-          OR: [
-            { hostId: user.id },
-            { participants: { some: { userId: user.id } } }
-          ],
-          status: 'ACTIVE'
-        }
-      });
-
-      // If not in any active session, reset role to NULL
-      if (!activeSession) {
-        const updatedUser = await prisma.user.update({
-          where: { id: user.id },
-          data: { role: undefined }
-        });
-        user.role = updatedUser.role;
+    // Check if user is in any active session
+    const activeSession = await prisma.session.findFirst({
+      where: {
+        OR: [
+          { hostId: user.id },
+          { participants: { some: { userId: user.id } } }
+        ],
+        status: 'ACTIVE'
       }
+    });
+
+    // If not in any active session, reset role to undefined
+    if (!activeSession) {
+      console.log('Login - No active session found, resetting role to undefined');
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: { role: undefined }
+      });
+      user.role = updatedUser.role;
+    } else {
+      console.log('Login - User is in active session:', activeSession.id);
     }
 
     // Generate token
@@ -127,7 +127,7 @@ export const login = async (req: Request<{}, {}, LoginBody>, res: Response): Pro
 export const updateRole = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     console.log('Update role - Request body:', req.body);
-    const { role } = req.body as { role: UserRole | null };
+    const { role } = req.body as { role: UserRole | undefined };
     const userId = req.user?.id;
     console.log('Update role - User ID:', userId);
 
@@ -162,15 +162,15 @@ export const updateRole = async (req: AuthRequest, res: Response): Promise<void>
     }
 
     // Allow role changes in these scenarios:
-    // 1. NULL -> HOST (when creating session)
-    // 2. NULL -> CLIENT (when joining session)
-    // 3. HOST -> NULL (when ending session)
-    // 4. CLIENT -> NULL (when leaving session)
+    // 1. undefined -> HOST (when creating session)
+    // 2. undefined -> CLIENT (when joining session)
+    // 3. HOST -> undefined (when ending session)
+    // 4. CLIENT -> undefined (when leaving session)
     const validTransitions = [
-      { from: null, to: 'HOST' },
-      { from: null, to: 'CLIENT' },
-      { from: 'HOST', to: null },
-      { from: 'CLIENT', to: null }
+      { from: undefined, to: 'HOST' },
+      { from: undefined, to: 'CLIENT' },
+      { from: 'HOST', to: undefined },
+      { from: 'CLIENT', to: undefined }
     ];
 
     const isValidTransition = validTransitions.some(
@@ -198,11 +198,11 @@ export const updateRole = async (req: AuthRequest, res: Response): Promise<void>
       to: role 
     });
 
-    // Update the role synchronously
+    // Update the role
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
-        role: role === null ? undefined : role
+        role: role
       },
       select: {
         id: true,

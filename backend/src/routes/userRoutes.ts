@@ -31,7 +31,7 @@ router.post('/login', [
 
 router.patch('/role', [
   auth,
-  body('role').isIn(['HOST', 'CLIENT'])
+  body('role').isIn(['HOST', 'CLIENT', null])
 ], (req: Request, res: Response, next: NextFunction) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

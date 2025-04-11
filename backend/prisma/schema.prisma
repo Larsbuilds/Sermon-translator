@@ -19,7 +19,7 @@ model User {
   email         String    @unique
   password      String
   name          String?
-  role          UserRole? @default(null)
+  role          UserRole? @default(undefined)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   

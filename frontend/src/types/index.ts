@@ -21,7 +21,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: UserRole | null;
+  role: UserRole | undefined;
   preferredLanguage?: Language;
 }
 

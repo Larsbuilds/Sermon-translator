@@ -7,7 +7,7 @@ export interface User {
   email: string;
   password: string;
   name: string | null;
-  role: UserRole | null;
+  role: UserRole | undefined;
   createdAt: Date;
   updatedAt: Date;
 }

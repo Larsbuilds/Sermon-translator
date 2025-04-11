@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { api } from '../services/api';
-import { UserRole } from '../types/index';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -10,7 +9,6 @@ export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>(UserRole.CLIENT);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,7 +16,7 @@ export default function Register() {
     setError('');
 
     try {
-      const { user, token } = await api.register({ name, email, password, role });
+      const { user, token } = await api.register({ name, email, password });
       setUser(user);
       setToken(token);
       api.setToken(token);
@@ -67,22 +65,6 @@ export default function Register() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-            </div>
-            <div>
-              <label htmlFor="role" className="sr-only">
-                Role
-              </label>
-              <select
-                id="role"
-                name="role"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
-              >
-                <option value={UserRole.CLIENT}>Client</option>
-                <option value={UserRole.HOST}>Host</option>
-              </select>
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
